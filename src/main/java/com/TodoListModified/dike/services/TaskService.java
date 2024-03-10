@@ -9,7 +9,8 @@ import java.util.List;
 
 public interface TaskService {
     Task createTask(TaskRequest taskRequest);
-    Task updateTask(String Id);
+    Task updateTask(String id, TaskRequest taskRequest);
+
     List<Task> getAllTask();
     void deleteTask(String Id);
 

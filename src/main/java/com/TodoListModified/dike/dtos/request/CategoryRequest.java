@@ -1,12 +1,12 @@
+// CategoryRequest.java
+
 package com.TodoListModified.dike.dtos.request;
 
 import lombok.Data;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.NoArgsConstructor;
 
 @Data
-@Document
-
+@NoArgsConstructor
 public class CategoryRequest {
-    private String Id;
     private String name;
 }

@@ -7,7 +7,8 @@ import java.util.List;
 
 public interface TagService {
     Tag createTag(TagRequest tagRequest);
-    Tag updateTag(String Id);
+    Tag updateTag(String id, TagRequest tagRequest);
+
     List<Tag> getAllTag();
-    void deleteTag(String Id);
+    void deleteTag(String id);
 }
