@@ -1,5 +1,3 @@
-// CategoryServiceImpl.java
-
 package com.TodoListModified.dike.services;
 
 import com.TodoListModified.dike.data.models.Category;
@@ -15,21 +13,20 @@ import java.util.Optional;
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
+    private final CategoryRepository categoryRepository;
+
     @Autowired
-    private CategoryRepository categoryRepository;
+    public CategoryServiceImpl(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
 
     @Override
     public Category createCategory(CategoryRequest categoryRequest) {
-        if (categoryExist(categoryRequest.getName())) {
-            throw new InvalidCategoryNameException("Category name already exists: " + categoryRequest.getName());
-        }
+        validateCategoryRequest(categoryRequest);
+
         Category category = new Category();
         category.setName(categoryRequest.getName());
         return categoryRepository.save(category);
-    }
-
-    private boolean categoryExist(String name) {
-        return categoryRepository.findCategoryByName(name) != null;
     }
 
     @Override
@@ -44,14 +41,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category updateCategory(String id, CategoryRequest categoryRequest) {
-        Optional<Category> optionalCategory = categoryRepository.findById(id);
-        if (optionalCategory.isPresent()) {
-            Category category = optionalCategory.get();
-            category.setName(categoryRequest.getName());
-            return categoryRepository.save(category);
-        } else {
-            throw new IllegalArgumentException("Category with id " + id + " not found");
-        }
+        Category category = getCategoryByIdFromRepository(id);
+
+        category.setName(categoryRequest.getName());
+        return categoryRepository.save(category);
     }
 
     @Override
@@ -61,5 +54,24 @@ public class CategoryServiceImpl implements CategoryService {
         } else {
             throw new IllegalArgumentException("Category with id " + id + " not found");
         }
+    }
+
+    private void validateCategoryRequest(CategoryRequest categoryRequest) {
+        if (categoryRequest == null || categoryRequest.getName() == null || categoryRequest.getName().trim().isEmpty()) {
+            throw new InvalidCategoryNameException("Category name cannot be null or empty");
+        }
+
+        if (categoryExist(categoryRequest.getName())) {
+            throw new InvalidCategoryNameException("Category name already exists: " + categoryRequest.getName());
+        }
+    }
+
+    private boolean categoryExist(String name) {
+        return categoryRepository.findCategoryByName(name) != null;
+    }
+
+    private Category getCategoryByIdFromRepository(String id) {
+        Optional<Category> optionalCategory = categoryRepository.findById(id);
+        return optionalCategory.orElseThrow(() -> new IllegalArgumentException("Category with id " + id + " not found"));
     }
 }

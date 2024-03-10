@@ -1,5 +1,3 @@
-// TaskServiceImplimentation.java
-
 package com.TodoListModified.dike.services;
 
 import com.TodoListModified.dike.data.models.Task;
@@ -14,42 +12,33 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class TaskServiceImplimentation implements TaskService {
+public class TaskServiceImplementation implements TaskService {
+
+    private final TaskRepository taskRepository;
 
     @Autowired
-    TaskRepository taskRepository;
+    public TaskServiceImplementation(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
 
     @Override
     public Task createTask(TaskRequest taskRequest) {
-        // Validate task title
-        if (!isValidTitle(taskRequest.getTitle())) {
-            throw new InvalidDetailsException("Invalid title: " + taskRequest.getTitle());
-        }
+        validateTaskRequest(taskRequest);
 
-        // Create a new Task entity
-        Task task = new Task();
-        task.setTitle(taskRequest.getTitle());
-        task.setDescription(taskRequest.getDescription());
-        task.setDueDate(taskRequest.getDueDate());
-        task.setCompleted(taskRequest.isCompleted());
-
-        // Save the task to the database
+        Task task = createTaskFromRequest(taskRequest);
         return taskRepository.save(task);
     }
 
     @Override
     public Task updateTask(String id, TaskRequest taskRequest) {
-        Optional<Task> optionalTask = taskRepository.findById(id);
-        if (optionalTask.isPresent()) {
-            Task task = optionalTask.get();
-            task.setTitle(taskRequest.getTitle());
-            task.setDescription(taskRequest.getDescription());
-            task.setDueDate(taskRequest.getDueDate());
-            task.setCompleted(taskRequest.isCompleted());
-            return taskRepository.save(task);
-        } else {
-            throw new TaskNotFoundException("Task with id " + id + " not found");
-        }
+        Task task = getTaskByIdFromRepository(id);
+
+        task.setTitle(taskRequest.getTitle());
+        task.setDescription(taskRequest.getDescription());
+        task.setDueDate(taskRequest.getDueDate());
+        task.setCompleted(taskRequest.isCompleted());
+
+        return taskRepository.save(task);
     }
 
     @Override
@@ -68,16 +57,30 @@ public class TaskServiceImplimentation implements TaskService {
 
     @Override
     public Task getTaskById(String id) {
+        return getTaskByIdFromRepository(id);
+    }
+
+    private Task getTaskByIdFromRepository(String id) {
         Optional<Task> optionalTask = taskRepository.findById(id);
-        if (optionalTask.isPresent()) {
-            return optionalTask.get();
-        } else {
-            throw new TaskNotFoundException("Task with id " + id + " not found");
+        return optionalTask.orElseThrow(() -> new TaskNotFoundException("Task with id " + id + " not found"));
+    }
+
+    private void validateTaskRequest(TaskRequest taskRequest) {
+        if (!isValidTitle(taskRequest.getTitle())) {
+            throw new InvalidDetailsException("Invalid title: " + taskRequest.getTitle());
         }
     }
 
-    // Helper method to validate task title
     private boolean isValidTitle(String title) {
         return title != null && !title.trim().isEmpty();
+    }
+
+    private Task createTaskFromRequest(TaskRequest taskRequest) {
+        Task task = new Task();
+        task.setTitle(taskRequest.getTitle());
+        task.setDescription(taskRequest.getDescription());
+        task.setDueDate(taskRequest.getDueDate());
+        task.setCompleted(taskRequest.isCompleted());
+        return task;
     }
 }

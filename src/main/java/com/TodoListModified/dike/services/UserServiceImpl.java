@@ -9,14 +9,65 @@ import com.TodoListModified.dike.exception.UserExistException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserServiceImpl implements UserService {
 
+    private final UserRepository userRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
-    public void register(UserRequest userRequest) {
+    public User register(UserRequest userRequest) {
+        validateUserRequest(userRequest);
+
+        User user = createUserFromRequest(userRequest);
+        userRepository.save(user);
+        return user;
+    }
+
+    @Override
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @Override
+    public User getUserById(String id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public void deleteUserById(String id) {
+        userRepository.deleteById(id);
+    }
+
+    @Override
+    public boolean login(LoginRequest loginRequest) {
+        User user = userRepository.findByEmail(loginRequest.getEmail());
+
+        if (user == null || !user.getPassword().equals(loginRequest.getPassword())) {
+            throw new InvalidDetailsException("Invalid email or password.");
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean logout(User user) {
+        // Implement logout logic here if needed
+        return true;
+    }
+
+    @Override
+    public void deleteUser(String id) {
+        userRepository.deleteById(id);
+    }
+
+    private void validateUserRequest(UserRequest userRequest) {
         if (!isValidEmail(userRequest.getEmail())) {
             throw new InvalidDetailsException("Invalid email format: " + userRequest.getEmail());
         }
@@ -36,12 +87,6 @@ public class UserServiceImpl implements UserService {
         if (userExistByEmail(userRequest.getEmail())) {
             throw new UserExistException(userRequest.getEmail() + " already exists");
         }
-
-        User user = new User();
-        user.setUsername(userRequest.getUsername());
-        user.setEmail(userRequest.getEmail());
-        user.setPassword(userRequest.getPassword());
-        userRepository.save(user);
     }
 
     private boolean isValidEmail(String email) {
@@ -52,37 +97,19 @@ public class UserServiceImpl implements UserService {
         return password.length() >= 8;
     }
 
-    @Override
-    public boolean login(LoginRequest loginRequest) {
-        User user = userRepository.findByEmail(loginRequest.getEmail());
-
-        if (user == null) {
-            throw new InvalidDetailsException("User with email " + loginRequest.getEmail() + " does not exist");
-        }
-
-        if (!user.getPassword().equals(loginRequest.getPassword())) {
-            throw new InvalidDetailsException("Incorrect password for user with email " + loginRequest.getEmail());
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean logout(User user) {
-        return false;
-    }
-
-    @Override
-    public void deleteUser(String id) {
-    }
-
     private boolean userExistByUsername(String username) {
-        User user = userRepository.findByUsername(username);
-        return user != null;
+        return userRepository.existsByUsername(username);
     }
 
     private boolean userExistByEmail(String email) {
-        User user = userRepository.findByEmail(email);
-        return user != null;
+        return userRepository.existsByEmail(email);
+    }
+
+    private User createUserFromRequest(UserRequest userRequest) {
+        User user = new User();
+        user.setUsername(userRequest.getUsername());
+        user.setEmail(userRequest.getEmail());
+        user.setPassword(userRequest.getPassword());
+        return user;
     }
 }
