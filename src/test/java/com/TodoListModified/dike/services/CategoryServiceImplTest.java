@@ -1,5 +1,3 @@
-// CategoryServiceImplTest.java
-
 package com.TodoListModified.dike.services;
 
 import com.TodoListModified.dike.data.models.Category;
